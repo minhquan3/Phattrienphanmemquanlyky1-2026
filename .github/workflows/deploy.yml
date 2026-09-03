@@ -10,30 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # 1. Lấy source code từ GitHub
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Cài đặt .NET SDK
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      # 3. Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore DemoMVC/DemoMVC.csproj
 
-      # 4. Build project
       - name: Build project
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build DemoMVC/DemoMVC.csproj --configuration Release --no-restore
 
-      # 5. Publish project
       - name: Publish project
-        run: dotnet publish **/*.csproj -c Release -o ./publish --no-build
+        run: dotnet publish DemoMVC/DemoMVC.csproj -c Release -o ./publish --no-build
 
-      # 6. Tạo app_offline.htm để tạm dừng website
       - name: Stop Server
         run: |
           echo "<html><body><h1>Updating...</h1></body></html>" > app_offline.htm
@@ -42,7 +35,6 @@ jobs:
             -T app_offline.htm \
             "ftp://${{ secrets.FTP_SERVER }}/wwwroot/app_offline.htm"
 
-      # 7. Upload project lên MonsterASP
       - name: Deploy App
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -57,7 +49,6 @@ jobs:
           exclude: |
             **/app_offline.htm
 
-      # 8. Xóa app_offline.htm để website hoạt động lại
       - name: Start Server
         if: always()
         run: |
