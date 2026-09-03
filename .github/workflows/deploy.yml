@@ -25,15 +25,7 @@ jobs:
         run: dotnet build DemoMVC/DemoMVC.csproj --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish DemoMVC/DemoMVC.csproj -c Release -o ./publish --no-build
-
-      - name: Stop Server
-        run: |
-          echo "<html><body><h1>Updating...</h1></body></html>" > app_offline.htm
-          curl -s --ftp-pasv \
-            -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            -T app_offline.htm \
-            "ftp://${{ secrets.FTP_SERVER }}/wwwroot/app_offline.htm"
+        run: dotnet publish DemoMVC/DemoMVC.csproj --configuration Release --output ./publish --no-build
 
       - name: Deploy App
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -46,13 +38,3 @@ jobs:
           local-dir: ./publish/
           server-dir: /wwwroot/
           security: loose
-          exclude: |
-            **/app_offline.htm
-
-      - name: Start Server
-        if: always()
-        run: |
-          curl -s --ftp-pasv \
-            -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "ftp://${{ secrets.FTP_SERVER }}/" \
-            -Q "-DELE /wwwroot/app_offline.htm" || true
