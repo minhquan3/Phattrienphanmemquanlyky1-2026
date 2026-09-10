@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Kết quả";
+}
+
+<div class="text-center">
+    <h1>Kết quả</h1>
+
+    <hr />
+
+    <p>
+        Họ và tên:
+        <strong>@ViewBag.Fullname</strong>
+    </p>
+
+    <p>
+        Địa chỉ:
+        <strong>@ViewBag.Address</strong>
+    </p>
+
+    <p>
+        Trường học:
+        <strong>@ViewBag.University</strong>
+    </p>
+
+    <a asp-controller="Student"
+       asp-action="Index"
+       class="btn btn-primary">
+        Quay lại
+    </a>
+</div>

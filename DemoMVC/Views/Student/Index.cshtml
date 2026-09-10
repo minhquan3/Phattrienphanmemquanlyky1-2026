@@ -1,0 +1,63 @@
+@model DemoMVC.Models.Student
+
+@{
+    ViewData["Title"] = "Nhập thông tin sinh viên";
+}
+
+<div class="text-center">
+
+    <h1>Thông tin sinh viên</h1>
+
+    <hr />
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.Error
+        </div>
+    }
+
+    <form asp-controller="Student"
+          asp-action="Submit"
+          method="post">
+
+        <div class="mb-3">
+            <label asp-for="Fullname">Họ và tên</label>
+
+            <input asp-for="Fullname"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Address">Địa chỉ</label>
+
+            <input asp-for="Address"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="University">Trường học</label>
+
+            <input asp-for="University"
+                   class="form-control"
+                   required />
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary">
+            Gửi thông tin
+        </button>
+
+    </form>
+
+    <br />
+
+    <a asp-controller="Student"
+       asp-action="Information"
+       class="btn btn-secondary">
+        Xem dữ liệu ViewBag / ViewData
+    </a>
+
+</div>

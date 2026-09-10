@@ -1,0 +1,39 @@
+@model DemoMVC.Models.Student
+
+@{
+    ViewData["Title"] = "Nhập thông tin sinh viên";
+}
+
+<div class="text-center">
+    <h1>Nhập thông tin sinh viên bằng Model</h1>
+
+    <hr />
+
+    <form asp-controller="Student"
+          asp-action="ModelResult"
+          method="post">
+
+        <div class="mb-3">
+            <label>Họ và tên</label>
+            <input asp-for="Fullname"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Địa chỉ</label>
+            <input asp-for="Address"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Trường học</label>
+            <input asp-for="University"
+                   class="form-control" />
+        </div>
+
+        <button type="submit"
+                class="btn btn-success">
+            Gửi bằng Model
+        </button>
+    </form>
+</div>

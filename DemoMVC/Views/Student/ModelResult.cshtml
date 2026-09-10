@@ -1,0 +1,32 @@
+@model DemoMVC.Models.Student
+
+@{
+    ViewData["Title"] = "Kết quả";
+}
+
+<div class="text-center">
+    <h1>Thông tin sinh viên</h1>
+
+    <hr />
+
+    <p>
+        Họ và tên:
+        <strong>@Model.Fullname</strong>
+    </p>
+
+    <p>
+        Địa chỉ:
+        <strong>@Model.Address</strong>
+    </p>
+
+    <p>
+        Trường học:
+        <strong>@Model.University</strong>
+    </p>
+
+    <a asp-controller="Student"
+       asp-action="ModelForm"
+       class="btn btn-primary">
+        Nhập lại
+    </a>
+</div>

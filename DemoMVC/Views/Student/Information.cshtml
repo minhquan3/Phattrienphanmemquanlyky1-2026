@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Information";
+}
+
+<div class="text-center">
+
+    <h1>@ViewBag.Title</h1>
+
+    <hr />
+
+    <h2>Dữ liệu bằng ViewBag</h2>
+
+    <p>
+        @ViewBag.Description
+    </p>
+
+    <hr />
+
+    <h2>Dữ liệu bằng ViewData</h2>
+
+    <p>
+        Trường học:
+        @ViewData["University"]
+    </p>
+
+    <p>
+        Ghi chú:
+        @ViewData["Note"]
+    </p>
+
+</div>

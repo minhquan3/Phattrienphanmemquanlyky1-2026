@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Thành công";
+}
+
+<div class="text-center">
+
+    <h1>Thêm sinh viên thành công!</h1>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Message"]
+        </div>
+    }
+
+    <a asp-controller="Student"
+       asp-action="Index"
+       class="btn btn-primary">
+        Nhập sinh viên khác
+    </a>
+
+</div>
