@@ -1,0 +1,129 @@
+@model DemoMVC.Models.Student
+
+@{
+    ViewData["Title"] = "Sửa sinh viên";
+}
+
+<h1>Sửa sinh viên</h1>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+
+        <form asp-action="Edit" method="post">
+
+            @* ID được gửi ngầm lên Controller *@
+            <input type="hidden" asp-for="Id" />
+
+            @* Hiển thị tổng hợp lỗi Validation *@
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger">
+            </div>
+
+            @* Họ tên *@
+            <div class="mb-3">
+                <label asp-for="Fullname"
+                       class="form-label">
+                </label>
+
+                <input asp-for="Fullname"
+                       class="form-control" />
+
+                <span asp-validation-for="Fullname"
+                      class="text-danger">
+                </span>
+            </div>
+
+            @* Địa chỉ *@
+            <div class="mb-3">
+                <label asp-for="Address"
+                       class="form-label">
+                </label>
+
+                <input asp-for="Address"
+                       class="form-control" />
+
+                <span asp-validation-for="Address"
+                      class="text-danger">
+                </span>
+            </div>
+
+            @* Email *@
+            <div class="mb-3">
+                <label asp-for="Email"
+                       class="form-label">
+                </label>
+
+                <input asp-for="Email"
+                       class="form-control" />
+
+                <span asp-validation-for="Email"
+                      class="text-danger">
+                </span>
+            </div>
+
+            @* Tuổi *@
+            <div class="mb-3">
+                <label asp-for="Age"
+                       class="form-label">
+                </label>
+
+                <input asp-for="Age"
+                       class="form-control" />
+
+                <span asp-validation-for="Age"
+                      class="text-danger">
+                </span>
+            </div>
+
+            @* GPA *@
+            <div class="mb-3">
+                <label asp-for="GPA"
+                       class="form-label">
+                </label>
+
+                <input asp-for="GPA"
+                       class="form-control" />
+
+                <span asp-validation-for="GPA"
+                      class="text-danger">
+                </span>
+            </div>
+
+            @* Trường đại học *@
+            <div class="mb-3">
+                <label asp-for="University"
+                       class="form-label">
+                </label>
+
+                <input asp-for="University"
+                       class="form-control" />
+
+                <span asp-validation-for="University"
+                      class="text-danger">
+                </span>
+            </div>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                Lưu thay đổi
+            </button>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                Quay lại
+            </a>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync(
+            "_ValidationScriptsPartial"
+        );
+    }
+}

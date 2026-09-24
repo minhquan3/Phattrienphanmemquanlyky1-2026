@@ -1,63 +1,70 @@
-@model DemoMVC.Models.Student
+@model IEnumerable<DemoMVC.Models.Student>
 
 @{
-    ViewData["Title"] = "Nhập thông tin sinh viên";
+    ViewData["Title"] = "Danh sách sinh viên";
 }
 
-<div class="text-center">
+<h1>Danh sách sinh viên</h1>
 
-    <h1>Thông tin sinh viên</h1>
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
 
-    <hr />
-
-    @if (ViewBag.Error != null)
-    {
-        <div class="alert alert-danger">
-            @ViewBag.Error
-        </div>
-    }
-
-    <form asp-controller="Student"
-          asp-action="Submit"
-          method="post">
-
-        <div class="mb-3">
-            <label asp-for="Fullname">Họ và tên</label>
-
-            <input asp-for="Fullname"
-                   class="form-control"
-                   required />
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Address">Địa chỉ</label>
-
-            <input asp-for="Address"
-                   class="form-control"
-                   required />
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="University">Trường học</label>
-
-            <input asp-for="University"
-                   class="form-control"
-                   required />
-        </div>
-
-        <button type="submit"
-                class="btn btn-primary">
-            Gửi thông tin
-        </button>
-
-    </form>
-
-    <br />
-
-    <a asp-controller="Student"
-       asp-action="Information"
-       class="btn btn-secondary">
-        Xem dữ liệu ViewBag / ViewData
+<p>
+    <a asp-action="Create" class="btn btn-primary">
+        Thêm sinh viên
     </a>
+</p>
 
-</div>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Họ tên</th>
+            <th>Địa chỉ</th>
+            <th>Email</th>
+            <th>Tuổi</th>
+            <th>GPA</th>
+            <th>Trường đại học</th>
+            <th>Chức năng</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var student in Model)
+        {
+            <tr>
+                <td>@student.Id</td>
+                <td>@student.Fullname</td>
+                <td>@student.Address</td>
+                <td>@student.Email</td>
+                <td>@student.Age</td>
+                <td>@student.GPA</td>
+                <td>@student.University</td>
+
+                <td>
+                    <a asp-action="Details"
+                       asp-route-id="@student.Id"
+                       class="btn btn-info btn-sm">
+                        Chi tiết
+                    </a>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@student.Id"
+                       class="btn btn-warning btn-sm">
+                        Sửa
+                    </a>
+
+                    <a asp-action="Delete"
+                       asp-route-id="@student.Id"
+                       class="btn btn-danger btn-sm">
+                        Xóa
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

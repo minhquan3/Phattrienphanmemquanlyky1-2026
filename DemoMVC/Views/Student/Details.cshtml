@@ -1,0 +1,70 @@
+@model DemoMVC.Models.Student
+
+@{
+    ViewData["Title"] = "Chi tiết sinh viên";
+}
+
+<h1>Chi tiết sinh viên</h1>
+
+<hr />
+
+<div>
+    <dl class="row">
+
+        <dt class="col-sm-3">
+            Họ và tên
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Fullname
+        </dd>
+
+        <dt class="col-sm-3">
+            Địa chỉ
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Address
+        </dd>
+
+        <dt class="col-sm-3">
+            Email
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Email
+        </dd>
+
+        <dt class="col-sm-3">
+            Tuổi
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Age
+        </dd>
+
+        <dt class="col-sm-3">
+            GPA
+        </dt>
+        <dd class="col-sm-9">
+            @Model.GPA
+        </dd>
+
+        <dt class="col-sm-3">
+            Trường đại học
+        </dt>
+        <dd class="col-sm-9">
+            @Model.University
+        </dd>
+
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Edit"
+       asp-route-id="@Model.Id"
+       class="btn btn-warning">
+        Sửa
+    </a>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Quay lại danh sách
+    </a>
+</div>
