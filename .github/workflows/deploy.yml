@@ -36,5 +36,5 @@ jobs:
           port: 21
           protocol: ftp
           local-dir: ./publish/
-          server-dir: /wwwroot/
+          server-dir: wwwroot/
           security: loose
