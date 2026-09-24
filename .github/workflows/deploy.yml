@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -27,6 +28,9 @@ jobs:
       - name: Publish project
         run: dotnet publish DemoMVC/DemoMVC.csproj --configuration Release --output ./publish --no-build
 
+      - name: Create app_offline.htm
+        run: echo "Application is updating..." > ./publish/app_offline.htm
+
       - name: Deploy App
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -36,5 +40,5 @@ jobs:
           port: 21
           protocol: ftp
           local-dir: ./publish/
-          server-dir: wwwroot/
+          server-dir: /wwwroot/
           security: loose
