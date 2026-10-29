@@ -1,3 +1,4 @@
+
 @model DemoMVC.Models.Student
 
 @{
@@ -16,6 +17,13 @@
     </div>
 
     <dl class="row">
+
+        <dt class="col-sm-3">
+            Mã sinh viên
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Id
+        </dd>
 
         <dt class="col-sm-3">
             Họ và tên
@@ -59,9 +67,17 @@
             @Model.University
         </dd>
 
+        <dt class="col-sm-3">
+            Khoa
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.Department?.DepartmentName ?? "Chưa phân khoa")
+        </dd>
+
     </dl>
 
     <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
 
         <input type="hidden" asp-for="Id" />
 
@@ -72,7 +88,6 @@
         <a asp-action="Index" class="btn btn-secondary">
             Hủy
         </a>
-
     </form>
 
 </div>

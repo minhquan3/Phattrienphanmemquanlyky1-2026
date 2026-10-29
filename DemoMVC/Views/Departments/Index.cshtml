@@ -1,0 +1,64 @@
+
+@model IEnumerable<DemoMVC.Models.Department>
+
+@{
+    ViewData["Title"] = "Danh sách khoa";
+}
+
+<h1>Danh sách khoa</h1>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["Message"]
+    </div>
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Thêm khoa</a>
+</p>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Mã khoa</th>
+            <th>Tên khoa</th>
+            <th>Mô tả</th>
+            <th>Chức năng</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var department in Model)
+            {
+                <tr>
+                    <td>@department.DepartmentId</td>
+                    <td>@department.DepartmentName</td>
+                    <td>@department.Description</td>
+                    <td>
+                        <a asp-action="Details"
+                           asp-route-id="@department.DepartmentId"
+                           class="btn btn-info btn-sm">Chi tiết</a>
+
+                        <a asp-action="Edit"
+                           asp-route-id="@department.DepartmentId"
+                           class="btn btn-warning btn-sm">Sửa</a>
+
+                        <a asp-action="Delete"
+                           asp-route-id="@department.DepartmentId"
+                           class="btn btn-danger btn-sm">Xóa</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" class="text-center">
+                    Chưa có dữ liệu khoa.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

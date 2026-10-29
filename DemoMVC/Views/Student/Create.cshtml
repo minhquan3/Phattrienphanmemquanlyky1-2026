@@ -1,3 +1,4 @@
+
 @model DemoMVC.Models.Student
 
 @{
@@ -6,124 +7,105 @@
 
 <h1>Thêm sinh viên</h1>
 
+<p class="text-muted">
+    Mã sinh viên sẽ được hệ thống tự động tạo khi bạn thêm mới.
+</p>
+
 <hr />
 
 <div class="row">
     <div class="col-md-6">
-
         <form asp-action="Create" method="post">
-
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly"
                  class="text-danger">
             </div>
 
-            <!-- Họ tên -->
             <div class="mb-3">
-                <label asp-for="Fullname"
-                       class="form-label">
+                <label asp-for="Fullname" class="form-label">
                     Họ và tên
                 </label>
-
-                <input asp-for="Fullname"
-                       class="form-control" />
-
+                <input asp-for="Fullname" class="form-control" />
                 <span asp-validation-for="Fullname"
-                      class="text-danger">
-                </span>
+                      class="text-danger"></span>
             </div>
 
-            <!-- Địa chỉ -->
             <div class="mb-3">
-                <label asp-for="Address"
-                       class="form-label">
+                <label asp-for="Address" class="form-label">
                     Địa chỉ
                 </label>
-
-                <input asp-for="Address"
-                       class="form-control" />
-
+                <input asp-for="Address" class="form-control" />
                 <span asp-validation-for="Address"
-                      class="text-danger">
-                </span>
+                      class="text-danger"></span>
             </div>
 
-            <!-- Email -->
             <div class="mb-3">
-                <label asp-for="Email"
-                       class="form-label">
+                <label asp-for="Email" class="form-label">
                     Email
                 </label>
-
-                <input asp-for="Email"
-                       class="form-control" />
-
+                <input asp-for="Email" class="form-control" />
                 <span asp-validation-for="Email"
-                      class="text-danger">
-                </span>
+                      class="text-danger"></span>
             </div>
 
-            <!-- Tuổi -->
             <div class="mb-3">
-                <label asp-for="Age"
-                       class="form-label">
+                <label asp-for="Age" class="form-label">
                     Tuổi
                 </label>
-
                 <input asp-for="Age"
                        class="form-control"
                        type="number" />
-
                 <span asp-validation-for="Age"
-                      class="text-danger">
-                </span>
+                      class="text-danger"></span>
             </div>
 
-            <!-- GPA -->
             <div class="mb-3">
-                <label asp-for="GPA"
-                       class="form-label">
+                <label asp-for="GPA" class="form-label">
                     GPA
                 </label>
-
                 <input asp-for="GPA"
                        class="form-control"
                        type="number"
                        step="0.01" />
-
                 <span asp-validation-for="GPA"
-                      class="text-danger">
-                </span>
+                      class="text-danger"></span>
             </div>
 
-            <!-- Trường đại học -->
             <div class="mb-3">
-                <label asp-for="University"
-                       class="form-label">
+                <label asp-for="University" class="form-label">
                     Trường đại học
                 </label>
-
                 <input asp-for="University"
                        class="form-control" />
-
                 <span asp-validation-for="University"
-                      class="text-danger">
-                </span>
+                      class="text-danger"></span>
             </div>
 
-            <button type="submit"
-                    class="btn btn-primary">
+            <div class="mb-3">
+                <label asp-for="DepartmentId"
+                       class="form-label">
+                    Khoa
+                </label>
+
+                <select asp-for="DepartmentId"
+                        asp-items="ViewBag.DepartmentId"
+                        class="form-select">
+                    <option value="">-- Chưa chọn khoa --</option>
+                </select>
+
+                <span asp-validation-for="DepartmentId"
+                      class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
                 Thêm sinh viên
             </button>
 
-            <a asp-action="Index"
-               class="btn btn-secondary">
+            <a asp-action="Index" class="btn btn-secondary">
                 Quay lại
             </a>
-
         </form>
-
     </div>
 </div>
 

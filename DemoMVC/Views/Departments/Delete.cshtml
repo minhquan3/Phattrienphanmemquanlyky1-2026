@@ -1,0 +1,53 @@
+
+@model DemoMVC.Models.Department
+
+@{
+    ViewData["Title"] = "Xóa khoa";
+}
+
+<h1>Xóa khoa</h1>
+
+<h3>Bạn có chắc chắn muốn xóa khoa này không?</h3>
+
+<div class="alert alert-warning">
+    Nếu khoa đang có sinh viên, hệ thống sẽ không cho phép xóa.
+</div>
+
+<hr />
+
+<dl class="row">
+    <dt class="col-sm-3">
+        @Html.DisplayNameFor(model => model.DepartmentId)
+    </dt>
+    <dd class="col-sm-9">
+        @Html.DisplayFor(model => model.DepartmentId)
+    </dd>
+
+    <dt class="col-sm-3">
+        @Html.DisplayNameFor(model => model.DepartmentName)
+    </dt>
+    <dd class="col-sm-9">
+        @Html.DisplayFor(model => model.DepartmentName)
+    </dd>
+
+    <dt class="col-sm-3">
+        @Html.DisplayNameFor(model => model.Description)
+    </dt>
+    <dd class="col-sm-9">
+        @Html.DisplayFor(model => model.Description)
+    </dd>
+</dl>
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="DepartmentId" />
+
+    <button type="submit" class="btn btn-danger">
+        Xác nhận xóa
+    </button>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Hủy
+    </a>
+</form>
