@@ -1,5 +1,5 @@
 
-@model IEnumerable<DemoMVC.Models.Student>
+@model DemoMVC.Models.PagedResult<DemoMVC.Models.Student>
 
 @{
     ViewData["Title"] = "Danh sách sinh viên";
@@ -7,24 +7,33 @@
 
 <h1>Danh sách sinh viên</h1>
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show"
-         role="alert">
-        @TempData["Message"]
-        <button type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-                aria-label="Đóng">
-        </button>
-    </div>
-}
+<div id="studentAlert" class="alert alert-success d-none" role="alert"></div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Thêm sinh viên
-    </a>
-</p>
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Tìm kiếm</label>
+                <input id="studentSearch" type="text" class="form-control" value="@ViewBag.Keyword" placeholder="Tìm theo tên, email, mã, trường..." />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Khoa</label>
+                <select id="studentDepartmentFilter" class="form-select">
+                    <option value="">-- Tất cả khoa --</option>
+                    @foreach (var item in (SelectList)ViewBag.Departments)
+                    {
+                        <option value="@item.Value" selected="@(ViewBag.DepartmentId != null && ViewBag.DepartmentId.ToString() == item.Value)">
+                            @item.Text
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 text-end">
+                <button type="button" class="btn btn-primary" id="btnOpenCreateStudentModal">Thêm sinh viên</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="table-responsive">
     <table class="table table-bordered table-striped table-hover align-middle">
@@ -33,7 +42,6 @@
                 <th>ID</th>
                 <th>Mã sinh viên</th>
                 <th>Họ tên</th>
-                <th>Địa chỉ</th>
                 <th>Email</th>
                 <th>Tuổi</th>
                 <th>GPA</th>
@@ -44,44 +52,24 @@
         </thead>
 
         <tbody>
-            @if (Model != null && Model.Any())
+            @if (Model != null && Model.Items.Any())
             {
-                foreach (var student in Model)
+                foreach (var student in Model.Items)
                 {
-                    <tr>
+                    <tr data-id="@student.Id">
                         <td>@student.Id</td>
-                        <td>
-                            <strong>@student.StudentCode</strong>
-                        </td>
+                        <td><strong>@student.StudentCode</strong></td>
                         <td>@student.Fullname</td>
-                        <td>@student.Address</td>
                         <td>@student.Email</td>
                         <td>@student.Age</td>
                         <td>@student.GPA</td>
                         <td>@student.University</td>
-                        <td>
-                            @(student.Department?.DepartmentName
-                                ?? "Chưa phân khoa")
-                        </td>
+                        <td>@(student.Department?.DepartmentName ?? "Chưa phân khoa")</td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">
-                                <a asp-action="Details"
-                                   asp-route-id="@student.Id"
-                                   class="btn btn-info btn-sm">
-                                    Chi tiết
-                                </a>
-
-                                <a asp-action="Edit"
-                                   asp-route-id="@student.Id"
-                                   class="btn btn-warning btn-sm">
-                                    Sửa
-                                </a>
-
-                                <a asp-action="Delete"
-                                   asp-route-id="@student.Id"
-                                   class="btn btn-danger btn-sm">
-                                    Xóa
-                                </a>
+                                <button type="button" class="btn btn-info btn-sm btn-details-student" data-id="@student.Id">Chi tiết</button>
+                                <button type="button" class="btn btn-warning btn-sm btn-edit-student" data-id="@student.Id">Sửa</button>
+                                <button type="button" class="btn btn-danger btn-sm btn-delete-student" data-id="@student.Id">Xóa</button>
                             </div>
                         </td>
                     </tr>
@@ -90,11 +78,166 @@
             else
             {
                 <tr>
-                    <td colspan="10" class="text-center">
-                        Chưa có dữ liệu sinh viên.
-                    </td>
+                    <td colspan="9" class="text-center">Chưa có dữ liệu sinh viên.</td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+<nav aria-label="Student pagination" class="mt-3">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @((Model?.HasPreviousPage ?? false) ? "" : "disabled")">
+            <a class="page-link" href="@Url.Action("Index", new { keyword = ViewBag.Keyword, departmentId = ViewBag.DepartmentId, page = (Model?.PageNumber ?? 1) - 1, pageSize = Model?.PageSize ?? 10 })">Trước</a>
+        </li>
+
+        @for (int i = 1; i <= (Model?.TotalPages ?? 1); i++)
+        {
+            <li class="page-item @(i == (Model?.PageNumber ?? 1) ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { keyword = ViewBag.Keyword, departmentId = ViewBag.DepartmentId, page = i, pageSize = Model?.PageSize ?? 10 })">@i</a>
+            </li>
+        }
+
+        <li class="page-item @((Model?.HasNextPage ?? false) ? "" : "disabled")">
+            <a class="page-link" href="@Url.Action("Index", new { keyword = ViewBag.Keyword, departmentId = ViewBag.DepartmentId, page = (Model?.PageNumber ?? 1) + 1, pageSize = Model?.PageSize ?? 10 })">Sau</a>
+        </li>
+    </ul>
+</nav>
+
+<div class="text-center text-muted small">Tổng số bản ghi: @(Model?.TotalRecords ?? 0)</div>
+
+<div id="studentModalContainer"></div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const studentSearchInput = $('#studentSearch');
+            const studentDepartmentFilter = $('#studentDepartmentFilter');
+
+            function showStudentAlert(message, type = 'success') {
+                const alert = $('#studentAlert');
+                alert.removeClass('d-none alert-success alert-danger alert-warning alert-info');
+                alert.addClass(type === 'danger' ? 'alert-danger' : 'alert-success');
+                alert.text(message);
+                alert.removeClass('d-none');
+            }
+
+            function applyStudentFilters() {
+                const keyword = studentSearchInput.val() ?? '';
+                const departmentId = studentDepartmentFilter.val() ?? '';
+                const pageSize = @((Model?.PageSize ?? 10));
+                const url = '@Url.Action("Index", "Student")' + '?keyword=' + encodeURIComponent(keyword) + '&departmentId=' + encodeURIComponent(departmentId) + '&page=1&pageSize=' + pageSize;
+                window.location.href = url;
+            }
+
+            studentSearchInput.on('input', applyStudentFilters);
+            studentDepartmentFilter.on('change', applyStudentFilters);
+
+            $('#btnOpenCreateStudentModal').on('click', function () {
+                $.get('@Url.Action("Create", "Student")')
+                    .done(function (html) {
+                        $('#studentModalContainer').html(html);
+                        const modal = new bootstrap.Modal(document.getElementById('createStudentModal'));
+                        modal.show();
+                    })
+                    .fail(function () {
+                        showStudentAlert('Không thể tải form thêm sinh viên.', 'danger');
+                    });
+            });
+
+            $(document).on('submit', '#createStudentForm', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                $.ajax({
+                    url: '@Url.Action("Create", "Student")',
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#createStudentModal').modal('hide');
+                            showStudentAlert(response.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        } else {
+                            $('#studentCreateValidationSummary').html(response.errors && response.errors.length ? response.errors.join('<br/>') : response.message);
+                        }
+                    },
+                    error: function () {
+                        showStudentAlert('Lỗi máy chủ khi thêm sinh viên.', 'danger');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-edit-student', function () {
+                const id = $(this).data('id');
+                $.get('@Url.Action("Edit", "Student")' + '?id=' + id)
+                    .done(function (html) {
+                        $('#studentModalContainer').html(html);
+                        const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+                        modal.show();
+                    })
+                    .fail(function () {
+                        showStudentAlert('Không thể tải form sửa sinh viên.', 'danger');
+                    });
+            });
+
+            $(document).on('submit', '#editStudentForm', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                const id = form.find('input[name="Id"]').val();
+                $.ajax({
+                    url: '@Url.Action("Edit", "Student")/' + id,
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#editStudentModal').modal('hide');
+                            showStudentAlert(response.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        } else {
+                            $('#studentEditValidationSummary').html(response.errors && response.errors.length ? response.errors.join('<br/>') : response.message);
+                        }
+                    },
+                    error: function () {
+                        showStudentAlert('Lỗi máy chủ khi cập nhật sinh viên.', 'danger');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-delete-student', function () {
+                const id = $(this).data('id');
+                $.get('@Url.Action("Delete", "Student")' + '?id=' + id)
+                    .done(function (html) {
+                        $('#studentModalContainer').html(html);
+                        const modal = new bootstrap.Modal(document.getElementById('deleteStudentModal'));
+                        modal.show();
+                    })
+                    .fail(function () {
+                        showStudentAlert('Không thể tải form xóa sinh viên.', 'danger');
+                    });
+            });
+
+            $(document).on('submit', '#deleteStudentForm', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                const id = form.find('input[name="Id"]').val();
+                $.ajax({
+                    url: '@Url.Action("DeleteConfirmed", "Student")/' + id,
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#deleteStudentModal').modal('hide');
+                            showStudentAlert(response.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        } else {
+                            showStudentAlert(response.message, 'danger');
+                        }
+                    },
+                    error: function () {
+                        showStudentAlert('Lỗi máy chủ khi xóa sinh viên.', 'danger');
+                    }
+                });
+            });
+        });
+    </script>
+}

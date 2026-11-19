@@ -15,17 +15,68 @@ namespace DemoMVC.Controllers
             _context = context;
         }
 
-        // GET: /Departments
-        public async Task<IActionResult> Index()
+        private static string NormalizeSearch(string? value)
         {
-            var departments = await _context.Departments
-                .AsNoTracking()
-                .ToListAsync();
-
-            return View(departments);
+            return value?.Trim() ?? string.Empty;
         }
 
-        // GET: /Departments/Details/1
+        // GET: /Departments
+        public async Task<IActionResult> Index(
+            string? searchTerm,
+            int page = 1,
+            int pageSize = 10)
+        {
+            if (page < 1)
+            {
+                page = 1;
+            }
+
+            if (pageSize < 1)
+            {
+                pageSize = 10;
+            }
+
+            var normalizedSearch = NormalizeSearch(searchTerm);
+
+            var query = _context.Departments
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(normalizedSearch))
+            {
+                query = query.Where(d =>
+                    d.DepartmentId.ToString().Contains(normalizedSearch)
+                    || d.DepartmentName.Contains(normalizedSearch)
+                    || (d.Description != null &&
+                        d.Description.Contains(normalizedSearch))
+                );
+            }
+
+            var totalRecords = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            if (totalPages == 0) totalPages = 1;
+            if (page > totalPages) page = totalPages;
+
+            var items = await query
+                .OrderBy(d => d.DepartmentId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var result = new PagedResult<Department>
+            {
+                Items = items,
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = totalPages,
+                SearchTerm = normalizedSearch
+            };
+
+            return View(result);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -34,6 +85,7 @@ namespace DemoMVC.Controllers
             }
 
             var department = await _context.Departments
+                .Include(d => d.Students)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.DepartmentId == id);
 
@@ -45,32 +97,43 @@ namespace DemoMVC.Controllers
             return View(department);
         }
 
-        // GET: /Departments/Create
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            return PartialView("_CreateModal", new Department());
         }
 
-        // POST: /Departments/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Department department)
         {
             if (!ModelState.IsValid)
             {
-                return View(department);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .ToList();
+
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ!",
+                    Errors = errors
+                });
             }
 
             _context.Departments.Add(department);
             await _context.SaveChangesAsync();
 
-            TempData["Message"] = "Thêm khoa thành công!";
-
-            return RedirectToAction(nameof(Index));
+            return Json(new AjaxResponse
+            {
+                Success = true,
+                Message = "Thêm khoa thành công!",
+                Data = new { department.DepartmentId, department.DepartmentName }
+            });
         }
 
-        // GET: /Departments/Edit/1
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -86,35 +149,63 @@ namespace DemoMVC.Controllers
                 return NotFound();
             }
 
-            return View(department);
+            return PartialView("_EditModal", department);
         }
 
-        // POST: /Departments/Edit/1
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            Department department)
+        public async Task<IActionResult> Edit(int id, Department department)
         {
             if (id != department.DepartmentId)
             {
-                return NotFound();
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Mã khoa không hợp lệ!"
+                });
             }
 
             if (!ModelState.IsValid)
             {
-                return View(department);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .ToList();
+
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ!",
+                    Errors = errors
+                });
             }
 
-            _context.Departments.Update(department);
+            var existingDepartment = await _context.Departments
+                .FirstOrDefaultAsync(d => d.DepartmentId == id);
+
+            if (existingDepartment == null)
+            {
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Không tìm thấy khoa cần sửa!"
+                });
+            }
+
+            existingDepartment.DepartmentName = department.DepartmentName.Trim();
+            existingDepartment.Description = department.Description?.Trim();
+
             await _context.SaveChangesAsync();
 
-            TempData["Message"] = "Cập nhật khoa thành công!";
-
-            return RedirectToAction(nameof(Index));
+            return Json(new AjaxResponse
+            {
+                Success = true,
+                Message = "Cập nhật khoa thành công!",
+                Data = new { existingDepartment.DepartmentId, existingDepartment.DepartmentName }
+            });
         }
 
-        // GET: /Departments/Delete/1
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -124,6 +215,7 @@ namespace DemoMVC.Controllers
             }
 
             var department = await _context.Departments
+                .Include(d => d.Students)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.DepartmentId == id);
 
@@ -132,11 +224,10 @@ namespace DemoMVC.Controllers
                 return NotFound();
             }
 
-            return View(department);
+            return PartialView("_DeleteModal", department);
         }
 
-        // POST: /Departments/Delete/1
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -146,23 +237,30 @@ namespace DemoMVC.Controllers
 
             if (department == null)
             {
-                return NotFound();
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Không tìm thấy khoa cần xóa!"
+                });
             }
 
             if (department.Students.Any())
             {
-                TempData["Message"] =
-                    "Không thể xóa khoa vì vẫn còn sinh viên thuộc khoa này.";
-
-                return RedirectToAction(nameof(Index));
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Không thể xóa khoa vì vẫn còn sinh viên thuộc khoa này."
+                });
             }
 
             _context.Departments.Remove(department);
             await _context.SaveChangesAsync();
 
-            TempData["Message"] = "Xóa khoa thành công!";
-
-            return RedirectToAction(nameof(Index));
+            return Json(new AjaxResponse
+            {
+                Success = true,
+                Message = "Xóa khoa thành công!"
+            });
         }
     }
 }

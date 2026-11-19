@@ -1,5 +1,5 @@
 
-@model IEnumerable<DemoMVC.Models.Department>
+@model DemoMVC.Models.PagedResult<DemoMVC.Models.Department>
 
 @{
     ViewData["Title"] = "Danh sách khoa";
@@ -7,58 +7,201 @@
 
 <h1>Danh sách khoa</h1>
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-info">
-        @TempData["Message"]
+<div id="departmentAlert" class="alert alert-success d-none" role="alert"></div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label">Tìm kiếm</label>
+                <input id="departmentSearch" type="text" class="form-control" value="@Model.SearchTerm" placeholder="Tìm theo mã, tên, mô tả..." />
+            </div>
+            <div class="col-md-4 text-end">
+                <button type="button" class="btn btn-primary" id="btnOpenCreateDepartmentModal">Thêm khoa</button>
+            </div>
+        </div>
     </div>
-}
+</div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Thêm khoa</a>
-</p>
-
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Mã khoa</th>
-            <th>Tên khoa</th>
-            <th>Mô tả</th>
-            <th>Chức năng</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model != null && Model.Any())
-        {
-            foreach (var department in Model)
+<div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Mã khoa</th>
+                <th>Tên khoa</th>
+                <th>Mô tả</th>
+                <th style="min-width: 190px;">Chức năng</th>
+            </tr>
+        </thead>
+        <tbody id="departmentTableBody">
+            @if (Model != null && Model.Items.Any())
+            {
+                foreach (var department in Model.Items)
+                {
+                    <tr data-id="@department.DepartmentId">
+                        <td>@department.DepartmentId</td>
+                        <td>@department.DepartmentName</td>
+                        <td>@(string.IsNullOrWhiteSpace(department.Description) ? "-" : department.Description)</td>
+                        <td>
+                            <button type="button" class="btn btn-info btn-sm btn-details-department" data-id="@department.DepartmentId">Chi tiết</button>
+                            <button type="button" class="btn btn-warning btn-sm btn-edit-department" data-id="@department.DepartmentId">Sửa</button>
+                            <button type="button" class="btn btn-danger btn-sm btn-delete-department" data-id="@department.DepartmentId">Xóa</button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td>@department.DepartmentId</td>
-                    <td>@department.DepartmentName</td>
-                    <td>@department.Description</td>
-                    <td>
-                        <a asp-action="Details"
-                           asp-route-id="@department.DepartmentId"
-                           class="btn btn-info btn-sm">Chi tiết</a>
-
-                        <a asp-action="Edit"
-                           asp-route-id="@department.DepartmentId"
-                           class="btn btn-warning btn-sm">Sửa</a>
-
-                        <a asp-action="Delete"
-                           asp-route-id="@department.DepartmentId"
-                           class="btn btn-danger btn-sm">Xóa</a>
-                    </td>
+                    <td colspan="4" class="text-center">Chưa có dữ liệu khoa.</td>
                 </tr>
             }
-        }
-        else
+        </tbody>
+    </table>
+</div>
+
+<nav aria-label="Department pagination" class="mt-3">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @((Model?.HasPreviousPage ?? false) ? "" : "disabled")">
+            <a class="page-link" href="@Url.Action("Index", new { page = (Model?.PageNumber ?? 1) - 1, pageSize = Model?.PageSize ?? 10, searchTerm = Model?.SearchTerm })">Trước</a>
+        </li>
+
+        @for (int i = 1; i <= (Model?.TotalPages ?? 1); i++)
         {
-            <tr>
-                <td colspan="4" class="text-center">
-                    Chưa có dữ liệu khoa.
-                </td>
-            </tr>
+            <li class="page-item @(i == (Model?.PageNumber ?? 1) ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = i, pageSize = Model?.PageSize ?? 10, searchTerm = Model?.SearchTerm })">@i</a>
+            </li>
         }
-    </tbody>
-</table>
+
+        <li class="page-item @((Model?.HasNextPage ?? false) ? "" : "disabled")">
+            <a class="page-link" href="@Url.Action("Index", new { page = (Model?.PageNumber ?? 1) + 1, pageSize = Model?.PageSize ?? 10, searchTerm = Model?.SearchTerm })">Sau</a>
+        </li>
+    </ul>
+</nav>
+
+<div class="text-center text-muted small">
+    Tổng số bản ghi: @(Model?.TotalRecords ?? 0)
+</div>
+
+<div id="departmentModalContainer"></div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const departmentSearchInput = $('#departmentSearch');
+
+            function showDepartmentAlert(message, type = 'success') {
+                const alert = $('#departmentAlert');
+                alert.removeClass('d-none alert-success alert-danger alert-warning alert-info');
+                alert.addClass(type === 'danger' ? 'alert-danger' : 'alert-success');
+                alert.text(message);
+                alert.removeClass('d-none');
+            }
+
+            function openDepartmentModal(url, callback) {
+                $.get(url)
+                    .done(function (html) {
+                        $('#departmentModalContainer').html(html);
+                        const modalElement = document.getElementById('createDepartmentModal') || document.getElementById('editDepartmentModal') || document.getElementById('deleteDepartmentModal');
+                        if (modalElement) {
+                            const modal = new bootstrap.Modal(modalElement);
+                            modal.show();
+                            if (callback) callback();
+                        }
+                    })
+                    .fail(function () {
+                        showDepartmentAlert('Không thể tải form.', 'danger');
+                    });
+            }
+
+            $('#departmentSearch').on('input', function () {
+                const keyword = $(this).val() ?? '';
+                const pageSize = @((Model?.PageSize ?? 10));
+                const url = '@Url.Action("Index", "Departments")' + '?searchTerm=' + encodeURIComponent(keyword) + '&page=1&pageSize=' + pageSize;
+                window.location.href = url;
+            });
+
+            $('#btnOpenCreateDepartmentModal').on('click', function () {
+                openDepartmentModal('@Url.Action("Create", "Departments")');
+            });
+
+            $(document).on('submit', '#createDepartmentForm', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                $.ajax({
+                    url: '@Url.Action("Create", "Departments")',
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#createDepartmentModal').modal('hide');
+                            showDepartmentAlert(response.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        } else {
+                            $('#departmentCreateValidationSummary').html(response.errors && response.errors.length ? response.errors.join('<br/>') : response.message);
+                        }
+                    },
+                    error: function () {
+                        showDepartmentAlert('Lỗi máy chủ khi thêm khoa.', 'danger');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-edit-department', function () {
+                const id = $(this).data('id');
+                openDepartmentModal('@Url.Action("Edit", "Departments")' + '?id=' + id, function () { $('#editDepartmentForm').attr('data-id', id); });
+            });
+
+            $(document).on('submit', '#editDepartmentForm', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                const id = form.find('input[name="DepartmentId"]').val();
+                $.ajax({
+                    url: '@Url.Action("Edit", "Departments")/' + id,
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#editDepartmentModal').modal('hide');
+                            showDepartmentAlert(response.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        } else {
+                            $('#departmentEditValidationSummary').html(response.errors && response.errors.length ? response.errors.join('<br/>') : response.message);
+                        }
+                    },
+                    error: function () {
+                        showDepartmentAlert('Lỗi máy chủ khi cập nhật khoa.', 'danger');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-delete-department', function () {
+                const id = $(this).data('id');
+                openDepartmentModal('@Url.Action("Delete", "Departments")' + '?id=' + id);
+            });
+
+            $(document).on('submit', '#deleteDepartmentForm', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                const id = form.find('input[name="DepartmentId"]').val();
+                $.ajax({
+                    url: '@Url.Action("DeleteConfirmed", "Departments")/' + id,
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#deleteDepartmentModal').modal('hide');
+                            showDepartmentAlert(response.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        } else {
+                            showDepartmentAlert(response.message, 'danger');
+                        }
+                    },
+                    error: function () {
+                        showDepartmentAlert('Lỗi máy chủ khi xóa khoa.', 'danger');
+                    }
+                });
+            });
+        });
+    </script>
+}

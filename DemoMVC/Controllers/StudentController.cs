@@ -16,9 +16,7 @@ namespace DemoMVC.Controllers
             _context = context;
         }
 
-        // Nạp danh sách khoa cho form thêm và sửa
-        private async Task LoadDepartmentsAsync(
-            int? selectedDepartmentId = null)
+        private async Task LoadDepartmentsAsync(int? selectedDepartmentId = null)
         {
             ViewBag.DepartmentId = new SelectList(
                 await _context.Departments
@@ -30,7 +28,6 @@ namespace DemoMVC.Controllers
             );
         }
 
-        // Tự động sinh mã sinh viên theo tiền tố 282105
         private async Task<string> GenerateStudentCodeAsync()
         {
             const string prefix = "282105";
@@ -63,20 +60,78 @@ namespace DemoMVC.Controllers
             return $"{prefix}{nextNumber:D4}";
         }
 
-        // READ: Danh sách sinh viên
-        // GET: /Student
-        public async Task<IActionResult> Index()
+        private static string NormalizeSearch(string? value)
         {
-            var students = await _context.Students
-                .Include(s => s.Department)
-                .OrderBy(s => s.Id)
-                .ToListAsync();
-
-            return View(students);
+            return value?.Trim() ?? string.Empty;
         }
 
-        // READ: Chi tiết sinh viên
-        // GET: /Student/Details/5
+        public async Task<IActionResult> Index(
+            string? keyword,
+            int? departmentId,
+            int page = 1,
+            int pageSize = 10)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var normalizedKeyword = NormalizeSearch(keyword);
+
+            var query = _context.Students
+                .Include(s => s.Department)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(normalizedKeyword))
+            {
+                query = query.Where(s =>
+                    s.Id.ToString().Contains(normalizedKeyword)
+                    || s.Fullname.Contains(normalizedKeyword)
+                    || s.Email.Contains(normalizedKeyword)
+                    || s.StudentCode.Contains(normalizedKeyword)
+                    || s.University.Contains(normalizedKeyword)
+                    || (s.Department != null &&
+                        s.Department.DepartmentName.Contains(normalizedKeyword))
+                );
+            }
+
+            if (departmentId.HasValue)
+            {
+                query = query.Where(s => s.DepartmentId == departmentId.Value);
+            }
+
+            var totalRecords = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            if (totalPages == 0) totalPages = 1;
+            if (page > totalPages) page = totalPages;
+
+            var students = await query
+                .OrderBy(s => s.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var departments = await _context.Departments
+                .OrderBy(d => d.DepartmentName)
+                .ToListAsync();
+
+            ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName", departmentId);
+            ViewBag.Keyword = normalizedKeyword;
+            ViewBag.DepartmentId = departmentId;
+
+            var result = new PagedResult<Student>
+            {
+                Items = students,
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = totalPages,
+                SearchTerm = normalizedKeyword
+            };
+
+            return View(result);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -96,27 +151,23 @@ namespace DemoMVC.Controllers
             return View(student);
         }
 
-        // CREATE: Hiển thị form thêm sinh viên
         [HttpGet]
         public async Task<IActionResult> Create()
         {
             await LoadDepartmentsAsync();
-            return View();
+            return PartialView("_CreateModal", new Student());
         }
 
-        // CREATE: Xử lý thêm sinh viên
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Student student)
         {
-            // Không nhận mã sinh viên do người dùng gửi lên
             ModelState.Remove(nameof(student.StudentCode));
 
             if (student.DepartmentId.HasValue)
             {
                 bool departmentExists = await _context.Departments
-                    .AnyAsync(d =>
-                        d.DepartmentId == student.DepartmentId.Value);
+                    .AnyAsync(d => d.DepartmentId == student.DepartmentId.Value);
 
                 if (!departmentExists)
                 {
@@ -127,22 +178,48 @@ namespace DemoMVC.Controllers
                 }
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                student.StudentCode = await GenerateStudentCodeAsync();
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .ToList();
 
-                _context.Students.Add(student);
-                await _context.SaveChangesAsync();
-
-                TempData["Message"] = "Thêm sinh viên thành công!";
-                return RedirectToAction(nameof(Index));
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ!",
+                    Errors = errors
+                });
             }
 
-            await LoadDepartmentsAsync(student.DepartmentId);
-            return View(student);
+            student.StudentCode = await GenerateStudentCodeAsync();
+            _context.Students.Add(student);
+            await _context.SaveChangesAsync();
+
+            var createdStudent = await _context.Students
+                .Include(s => s.Department)
+                .FirstOrDefaultAsync(s => s.Id == student.Id);
+
+            return Json(new AjaxResponse
+            {
+                Success = true,
+                Message = "Thêm sinh viên thành công!",
+                Data = new
+                {
+                    student.Id,
+                    student.StudentCode,
+                    student.Fullname,
+                    student.Email,
+                    student.Age,
+                    student.GPA,
+                    student.University,
+                    DepartmentName = createdStudent?.Department?.DepartmentName ?? "Chưa phân khoa"
+                }
+            });
         }
 
-        // UPDATE: Hiển thị form sửa sinh viên
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -159,38 +236,40 @@ namespace DemoMVC.Controllers
             }
 
             await LoadDepartmentsAsync(student.DepartmentId);
-            return View(student);
+            return PartialView("_EditModal", student);
         }
 
-        // UPDATE: Xử lý sửa sinh viên, giữ nguyên mã sinh viên
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            Student student)
+        public async Task<IActionResult> Edit(int id, Student student)
         {
             if (id != student.Id)
             {
-                return NotFound();
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Mã sinh viên không hợp lệ!"
+                });
             }
 
-            // Lấy bản ghi đang có trong database
             var existingStudent = await _context.Students
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (existingStudent == null)
             {
-                return NotFound();
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Không tìm thấy sinh viên cần sửa!"
+                });
             }
 
-            // Không kiểm tra mã sinh viên do form gửi lên
             ModelState.Remove(nameof(student.StudentCode));
 
             if (student.DepartmentId.HasValue)
             {
                 bool departmentExists = await _context.Departments
-                    .AnyAsync(d =>
-                        d.DepartmentId == student.DepartmentId.Value);
+                    .AnyAsync(d => d.DepartmentId == student.DepartmentId.Value);
 
                 if (!departmentExists)
                 {
@@ -203,40 +282,48 @@ namespace DemoMVC.Controllers
 
             if (!ModelState.IsValid)
             {
-                student.StudentCode = existingStudent.StudentCode;
-                await LoadDepartmentsAsync(student.DepartmentId);
-                return View(student);
-            }
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .ToList();
 
-            try
-            {
-                // Chỉ cập nhật các trường được phép sửa
-                existingStudent.Fullname = student.Fullname;
-                existingStudent.Address = student.Address;
-                existingStudent.Email = student.Email;
-                existingStudent.Age = student.Age;
-                existingStudent.GPA = student.GPA;
-                existingStudent.University = student.University;
-                existingStudent.DepartmentId = student.DepartmentId;
-
-                // Giữ nguyên existingStudent.StudentCode
-                await _context.SaveChangesAsync();
-
-                TempData["Message"] = "Cập nhật sinh viên thành công!";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!StudentExists(id))
+                return Json(new AjaxResponse
                 {
-                    return NotFound();
-                }
-
-                throw;
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ!",
+                    Errors = errors
+                });
             }
+
+            existingStudent.Fullname = student.Fullname.Trim();
+            existingStudent.Address = student.Address.Trim();
+            existingStudent.Email = student.Email.Trim();
+            existingStudent.Age = student.Age;
+            existingStudent.GPA = student.GPA;
+            existingStudent.University = student.University.Trim();
+            existingStudent.DepartmentId = student.DepartmentId;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new AjaxResponse
+            {
+                Success = true,
+                Message = "Cập nhật sinh viên thành công!",
+                Data = new
+                {
+                    existingStudent.Id,
+                    existingStudent.StudentCode,
+                    existingStudent.Fullname,
+                    existingStudent.Email,
+                    DepartmentName = (await _context.Departments
+                        .Where(d => d.DepartmentId == existingStudent.DepartmentId)
+                        .Select(d => d.DepartmentName)
+                        .FirstOrDefaultAsync()) ?? "Chưa phân khoa"
+                }
+            });
         }
 
-        // DELETE: Hiển thị trang xác nhận xóa
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -254,28 +341,34 @@ namespace DemoMVC.Controllers
                 return NotFound();
             }
 
-            return View(student);
+            return PartialView("_DeleteModal", student);
         }
 
-        // DELETE: Thực hiện xóa
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var student = await _context.Students.FindAsync(id);
 
-            if (student != null)
+            if (student == null)
             {
-                _context.Students.Remove(student);
-                await _context.SaveChangesAsync();
-
-                TempData["Message"] = "Xóa sinh viên thành công!";
+                return Json(new AjaxResponse
+                {
+                    Success = false,
+                    Message = "Không tìm thấy sinh viên cần xóa!"
+                });
             }
 
-            return RedirectToAction(nameof(Index));
+            _context.Students.Remove(student);
+            await _context.SaveChangesAsync();
+
+            return Json(new AjaxResponse
+            {
+                Success = true,
+                Message = "Xóa sinh viên thành công!"
+            });
         }
 
-        // Kiểm tra sinh viên có tồn tại không
         private bool StudentExists(int id)
         {
             return _context.Students.Any(s => s.Id == id);
