@@ -1,0 +1,27 @@
+@model DemoMVC.Models.Department
+
+<div class="modal fade" id="detailsDepartmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Chi tiết khoa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Mã khoa</dt>
+                    <dd class="col-sm-8">@Model.DepartmentId</dd>
+
+                    <dt class="col-sm-4">Tên khoa</dt>
+                    <dd class="col-sm-8">@Model.DepartmentName</dd>
+
+                    <dt class="col-sm-4">Mô tả</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>

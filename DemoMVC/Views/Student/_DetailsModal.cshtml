@@ -1,0 +1,45 @@
+@model DemoMVC.Models.Student
+
+<div class="modal fade" id="detailsStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Chi tiết sinh viên</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">ID</dt>
+                    <dd class="col-sm-9">@Model.Id</dd>
+
+                    <dt class="col-sm-3">Mã sinh viên</dt>
+                    <dd class="col-sm-9">@Model.StudentCode</dd>
+
+                    <dt class="col-sm-3">Họ và tên</dt>
+                    <dd class="col-sm-9">@Model.Fullname</dd>
+
+                    <dt class="col-sm-3">Địa chỉ</dt>
+                    <dd class="col-sm-9">@Model.Address</dd>
+
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9">@Model.Email</dd>
+
+                    <dt class="col-sm-3">Tuổi</dt>
+                    <dd class="col-sm-9">@Model.Age</dd>
+
+                    <dt class="col-sm-3">GPA</dt>
+                    <dd class="col-sm-9">@Model.GPA</dd>
+
+                    <dt class="col-sm-3">Trường đại học</dt>
+                    <dd class="col-sm-9">@Model.University</dd>
+
+                    <dt class="col-sm-3">Khoa</dt>
+                    <dd class="col-sm-9">@(Model.Department?.DepartmentName ?? "Chưa phân khoa")</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -148,6 +148,11 @@ namespace DemoMVC.Controllers
                 return NotFound();
             }
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_DetailsModal", student);
+            }
+
             return View(student);
         }
 

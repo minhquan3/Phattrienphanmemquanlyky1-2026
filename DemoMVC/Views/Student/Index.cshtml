@@ -145,6 +145,25 @@
                     });
             });
 
+            $(document).on('click', '.btn-details-student', function () {
+                const id = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("Details", "Student")' + '?id=' + encodeURIComponent(id),
+                    type: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .done(function (html) {
+                        $('#studentModalContainer').html(html);
+                        const modalElement = document.getElementById('detailsStudentModal');
+                        if (modalElement) {
+                            new bootstrap.Modal(modalElement).show();
+                        }
+                    })
+                    .fail(function () {
+                        showStudentAlert('Không thể tải chi tiết sinh viên.', 'danger');
+                    });
+            });
+
             $(document).on('submit', '#createStudentForm', function (e) {
                 e.preventDefault();
                 const form = $(this);

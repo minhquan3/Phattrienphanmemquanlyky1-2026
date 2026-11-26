@@ -102,7 +102,7 @@
                 $.get(url)
                     .done(function (html) {
                         $('#departmentModalContainer').html(html);
-                        const modalElement = document.getElementById('createDepartmentModal') || document.getElementById('editDepartmentModal') || document.getElementById('deleteDepartmentModal');
+                        const modalElement = document.getElementById('createDepartmentModal') || document.getElementById('editDepartmentModal') || document.getElementById('deleteDepartmentModal') || document.getElementById('detailsDepartmentModal');
                         if (modalElement) {
                             const modal = new bootstrap.Modal(modalElement);
                             modal.show();
@@ -123,6 +123,25 @@
 
             $('#btnOpenCreateDepartmentModal').on('click', function () {
                 openDepartmentModal('@Url.Action("Create", "Departments")');
+            });
+
+            $(document).on('click', '.btn-details-department', function () {
+                const id = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("Details", "Departments")' + '?id=' + encodeURIComponent(id),
+                    type: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .done(function (html) {
+                        $('#departmentModalContainer').html(html);
+                        const modalElement = document.getElementById('detailsDepartmentModal');
+                        if (modalElement) {
+                            new bootstrap.Modal(modalElement).show();
+                        }
+                    })
+                    .fail(function () {
+                        showDepartmentAlert('Không thể tải chi tiết khoa.', 'danger');
+                    });
             });
 
             $(document).on('submit', '#createDepartmentForm', function (e) {
